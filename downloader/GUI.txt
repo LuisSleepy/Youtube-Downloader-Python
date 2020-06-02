@@ -1,0 +1,108 @@
+import keyboard
+import pytube
+from tkinter import *
+from tkinter import filedialog
+from pytube import YouTube
+
+SAVING_PATH = "C:\\Users\\Admin\\Downloads"
+
+def open_directory():
+    global FolderName
+    FolderName = filedialog.askdirectory()
+
+class Downloader:
+    def __init__(self):
+        self.window = None
+        self.link = None
+        self.video = None
+
+    def get_video(self, link):
+        print(link)
+         if link is None:
+             self.window.entry_error.config(text = "Please enter the link here",
+                                           fg = "red")
+
+    def get_file_name(self):
+        self.download_yt_video(self.link)
+
+    def download_yt_video(self, link):
+        try:
+            self.video = YouTube(link)
+            print("Is this the video you want to download:", self.video.title)
+
+            while True:
+                if keyboard.is_pressed('y'):
+                    res_dict = dict()
+                    for stream in self.video.streams.filter(progressive=True):
+                        res_dict[stream.itag] = stream.resolution
+                    res_values_list = list(res_dict.values())
+                    print("These are the available resolution:", res_values_list)
+                    print("Choose from the available resolution. Number starts from 1")
+
+                    while True:
+                        choice = int(input())
+                        if 0 < choice <= len(res_values_list):
+                            break
+
+                    chosen_res = self.video.streams.get_by_resolution(res_values_list[choice - 1])
+                    print("Started downloading")
+                    chosen_res.download(SAVING_PATH)
+                    print("Finished downloading")
+                elif keyboard.is_pressed('n'):
+                    print("\n")
+                    self.get_file_name()
+        except pytube.exceptions.RegexMatchError:
+            print("Invalid link. Download video from YouTube only.")
+            self.get_file_name()
+
+
+class Window(Frame):
+    entry_error = Label()
+
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.master = master
+        # self.dl = Downloader()
+        self.display()
+
+    def display(self):
+        # For the main label
+        main_label = Label(self.master, text="YouTube Video Downloader",
+                               fg="blue", font=("Brandon Grotesque", 30))
+        main_label.grid()
+
+        # For the label on the Entry for the YouTube link
+        link_label = Label(self.master, text = "Please enter the link here:",
+                           fg = "black", font = ("Sans Serif", 20))
+        link_label.grid(row = 1)
+
+        # For getting the link
+        entry_var = StringVar()
+        entry = Entry(self.master, width = 50, textvariable = entry_var)
+        entry.grid(pady = (0, 10))
+
+        # For checking the video
+        check_button = Button(self.master, width = 5, bg = "green", fg = "white",
+                              text = "Check", font = ("Arial", 10), command = print("hello"))
+        check_button.grid(row = 3)
+
+        # If an error occurs
+        entry_error = Label(self.master, text = "", fg = "red", font = ("Helvetica", 15))
+        entry_error.grid(pady = (0, 30))
+
+    def choosing_directory(self):
+        # For choosing the destination of the dowload
+        save_label = Label(self.master, text = "Download Directory",
+                           fg = "green", font = ("Sans Serif", 20, "bold"))
+        save_label.grid(row = 5)
+
+        save_button = Button(self.master, width = 20, bg = "green", fg = "white",
+                             text = "Click to choose a folder", font = ("Arial", 15),
+                             command = open_directory)
+        save_button.grid()
+
+root = Tk()
+root.grid_columnconfigure(0, weight = 1)
+root.title("YouTube Video Downloader")
+app = Window(root)
+root.mainloop()
