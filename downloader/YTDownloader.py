@@ -1,11 +1,7 @@
 """
-Resources:
-1. https://pythonbasics.org/tkinter-image/
-2. https://github.com/nficano/pytube/issues/361
-3. https://medium.com/quick-code/understanding-self-in-python-a3704319e5f0
-4. https://python-textbok.readthedocs.io/en/1.0/Introduction_to_GUI_Programming.html
-5. https://stackoverflow.com/questions/2260235/how-to-clear-the-entry-widget-after-a-button-is-pressed-in-tkinter
+A YouTube video downloader in Python programming language, using pytube
 
+Author: janLuisAntoc
 """
 
 import pytube
@@ -25,26 +21,26 @@ class Window:
         master.title("YouTube Video Downloader")
         # For the main label
         main_label = Label(self.master, text="YouTube Video Downloader",
-                           fg="blue", font=("Brandon Grotesque", 30))
+                           fg="#FF0000", font=("Brandon Grotesque", 30))
         main_label.grid()
 
         # For the label on the Entry for the YouTube link
         self.link_label = Label(self.master, text="Please enter the link here:",
-                                fg="black", font=("Sans Serif", 20))
+                                fg="#282828", font=("Sans Serif", 20))
         self.link_label.grid(row=1)
 
         # For getting the link
         entry_var = StringVar()
         self.entry = Entry(self.master, width=50, textvariable=entry_var)
-        self.entry.grid(pady=(0, 10))
+        self.entry.grid(row=2)
 
         self.youtubeEntry = Entry(self.master, width=50,
                                   textvariable=entry_var)
 
         # For checking the video
         self.check_button = Button(self.master, width=5, bg="blue", fg="white",
-                                   text="Check", font=("Arial", 10), command=self.check_link)
-        self.check_button.grid(row=3)
+                                   text="Check", font=("Arial", 10, "bold"), command=self.check_link)
+        self.check_button.grid(row=3, pady=10)
 
         self.entry_error = Label(self.master, text="", fg="red", font=("Helvetica", 15))
         self.entry_error.grid(pady=(0, 30))
@@ -58,10 +54,15 @@ class Window:
         self.yes_button = Button()
         self.no_button = Button()
         self.link = None
+        self.to_init_screen_button = Button()
         self.choosing_dir_button = Button()
         self.directory_label = Label()
         self.proceed_button = Button()
         self.res_choices = ttk.Combobox()
+        self.to_sec_screen_button = Button()
+        self.res_label = Label()
+        self.download_button = Button()
+        self.download_label = Button()
 
     def check_link(self):
         self.link = self.youtubeEntry.get()
@@ -79,7 +80,14 @@ class Window:
             self.entry_error['text'] = "Please try again"
             return
 
-        self.title_label['text'] = self.title
+        # Some characters are not readable (like emojis)
+        # Fixed this problem by ignoring these special characters
+        title_list = [self.title[j] for j in range(len(self.title)) if ord(self.title[j])
+                      in range(65536)]
+        title_str = ""
+        for j in title_list:
+            title_str = title_str + j
+        self.title_label['text'] = title_str
 
         self.confirmation_label['text'] = "Is this the video you want to download?"
 
@@ -118,10 +126,38 @@ class Window:
         self.directory_label = Label(self.master, font=("Helvetica", 15))
         self.directory_label.grid(row=3)
 
+        self.to_init_screen_button = Button(self.master, width=10, bg="yellow", fg="black",
+                                            text="Go Back", font=("Arial", 10),
+                                            command=self.restart_init_screen)
+        self.to_init_screen_button.grid(row=5)
+
+    def restart_init_screen(self):
+        # Remove everything except those objects that should be seen in the initial screen
+        self.choosing_dir_button.grid_forget()
+        self.directory_label.grid_forget()
+        self.to_init_screen_button.grid_forget()
+        self.link_label.grid(row=1)
+        self.entry.grid(row=2)
+        self.check_button.grid(row=3, pady=10)
+        self.proceed_button.grid_forget()
+
+    def reject_video(self):
+        # Delete the content in the field where the link will be pasted
+        self.entry.delete(0, 'end')
+
+        # Delete the shown title, the confirmation label, and the two buttons
+        self.title_label.grid_forget()
+        self.confirmation_label.grid_forget()
+        self.yes_button.pack_forget()
+        self.no_button.pack_forget()
+
     def choose_directory(self):
         folder_name = filedialog.askdirectory()
+
         if len(folder_name) > 1:
             self.directory_label.config(text=folder_name)
+            # Fixes the error of "Proceed" button appearing again in the main menu
+            self.proceed_button.grid_forget()
             self.to_choose_res()
         else:
             self.directory_label.config(text="Please choose a folder!", fg="red")
@@ -130,6 +166,15 @@ class Window:
         self.proceed_button = Button(self.master, width=10, bg="green", fg="black",
                                      text="Proceed", font=("Arial", 10), command=self.choose_res)
         self.proceed_button.grid(row=4)
+
+    def restart_sec_screen(self):
+        self.res_label.grid_forget()
+        self.res_choices.grid_forget()
+        self.download_button.grid_forget()
+        self.to_sec_screen_button.grid_forget()
+
+        self.choosing_dir_button.grid(row=2)
+        # self.to_init_screen_button.grid(row=5)
 
     def choose_res(self):
         self.choosing_dir_button.grid_forget()
@@ -143,37 +188,32 @@ class Window:
             res_dict[stream.itag] = stream.resolution
         res_values_list = list(res_dict.values())
 
-        res_label = Label(self.master, fg="green", text="Please choose a resolution",
-                          font=("Sans Serif", 20))
-        res_label.grid(row=2)
+        self.res_label = Label(self.master, fg="green", text="Please choose a resolution",
+                               font=("Sans Serif", 20))
+        self.res_label.grid(row=2)
         self.res_choices = ttk.Combobox(self.master, values=res_values_list)
         self.res_choices.grid(row=3)
 
-        download_button = Button(self.master, width=10, bg="green", fg="black",
-                                 text="Download", font=("Arial", 10),
-                                 command=self.download)
-        download_button.grid(row=4)
+        self.download_button = Button(self.master, width=10, bg="green", fg="black",
+                                      text="Download", font=("Arial", 10),
+                                      command=self.download)
+        self.download_button.grid(row=4)
+
+        self.to_sec_screen_button = Button(self.master, width=10, bg="yellow", fg="black",
+                                           text="Go Back", font=("Arial", 10),
+                                           command=self.restart_sec_screen)
+        self.to_sec_screen_button.grid(row=5)
 
     def download(self):
         choice = self.res_choices.get()
         if choice is "":
-            download_label = Label(self.master, fg="green", text="Choose a resolution",
-                                   font=("Sans Serif", 20))
-            download_label.grid(row = 5)
+            self.download_label = Label(self.master, fg="green", text="Choose a resolution",
+                                        font=("Sans Serif", 20))
+            self.download_label.grid(row=5)
         else:
-            download_label = Label(self.master, fg="green", text= choice + " video is downloading",
-                                   font=("Sans Serif", 20))
-            download_label.grid(row=5)
-
-    def reject_video(self):
-        # Delete the content in the field where the link will be pasted
-        self.entry.delete(0, 'end')
-
-        # Delete the shown title, the confirmation label, and the two buttons
-        self.title_label.grid_forget()
-        self.confirmation_label.grid_forget()
-        self.yes_button.pack_forget()
-        self.no_button.pack_forget()
+            self.download_label = Label(self.master, fg="green", text=choice + " video is downloading",
+                                        font=("Sans Serif", 20))
+            self.download_label.grid(row=5)
 
 
 root = Tk()
