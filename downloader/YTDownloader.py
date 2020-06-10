@@ -10,6 +10,7 @@ from tkinter import filedialog
 from tkinter import ttk
 from pytube import YouTube
 import time
+import socket
 
 
 class Window:
@@ -44,13 +45,17 @@ class Window:
         self.entry_error.grid(pady=(0, 30))
 
         # Label for displaying the title of the video
-        self.title_label = Label(self.master, fg="black", font=("Sans Serif", 20))
+        self.title_label = Label(self.master, fg="#424141", font=("Helvetica", 20, "bold"))
 
         # Label for asking the confirmation from the user
         self.confirmation_label = Label(self.master, fg="black", font=("Sans Serif", 20))
 
         # Frame for the yes and no button for confirmation of the video
         self.confirmation_frame = Frame(self.master)
+
+        developer_label = Label(self.master, fg = "#158BC6", font = ("Sans Serif", 15, "italic"),
+                                text = "Developed by: SauceCute")
+        developer_label.grid(row = 7)
 
         # For the objects in the initial screen
         self.title = None
@@ -76,13 +81,28 @@ class Window:
     # Some errors not yet shown to the user:
         # 1. Empty or no link provided
     def check_link(self):
+        # Make sure that the objects for confirming the video is not yet shown in the screen
+        self.title_label.grid_forget()
+        self.confirmation_frame.grid_forget()
+        self.confirmation_label.grid_forget()
+
         self.link = self.youtubeEntry.get()
         try:
-            title = pytube.YouTube(self.link).title
-            self.show_title(title)
-            self.entry_error['text'] = ""
-
+            socket.create_connection(("Google.com", 80))
+            if self.link is "":
+                self.entry_error['text'] = "Put the link above"
+            else:
+                title = pytube.YouTube(self.link).title
+                if title == "YouTube":
+                    print(title)
+                    self.entry_error['text'] = "An error occurred. Please try again."
+                else:
+                    self.show_title(title)
+                    self.entry_error['text'] = ""
+                    self.check_button['state'] = "disabled"
         # If an error occurs
+        except OSError:
+            self.entry_error['text'] = "No internet connection"
         except pytube.exceptions.RegexMatchError:
             self.entry_error['text'] = "Invalid link"
 
@@ -116,14 +136,14 @@ class Window:
 
         # Verifying the video to download
         self.yes_button = Button(self.confirmation_frame, width=5, bg="green", fg="white",
-                                 text="Yes", font=("Arial", 10), command=self.confirm_video)
+                                 text="Yes", font=("Arial", 10, "bold"), command=self.confirm_video)
         self.yes_button.pack(side=LEFT, padx=10)
 
         # Make sure that the no button is not yet on the screen
         self.no_button.pack_forget()
         # Not the video to download
         self.no_button = Button(self.confirmation_frame, width=5, bg="red", fg="white",
-                                text="No", font=("Arial", 10), command=self.reject_video)
+                                text="No", font=("Arial", 10, "bold"), command=self.reject_video)
         self.no_button.pack(side=RIGHT)
 
         self.confirmation_frame.grid(row=6)
@@ -137,7 +157,7 @@ class Window:
         self.check_button.grid_forget()
 
         # Button for choosing the directory
-        self.choosing_dir_button = Button(self.master, width=20, bg="green", fg="black",
+        self.choosing_dir_button = Button(self.master, width=20, bg="#4AEE12", fg="black",
                                           text="Choose Directory", font=("Arial", 20),
                                           command=self.choose_directory)
         self.choosing_dir_button.grid(row=2)
@@ -148,7 +168,7 @@ class Window:
 
         # Button for going back to the initial screen
         self.to_init_screen_button = Button(self.master, width=10, bg="yellow", fg="black",
-                                            text="Go Back", font=("Arial", 10),
+                                            text="Go Back", font=("Arial", 10, "bold"),
                                             command=self.restart_init_screen)
         self.to_init_screen_button.grid(row=5)
 
@@ -176,6 +196,8 @@ class Window:
         self.yes_button.pack_forget()
         self.no_button.pack_forget()
 
+        self.check_button['state'] = "normal"
+
     # Controller for choosing the directory
     def choose_directory(self):
         # Allows opening the file dialog
@@ -191,8 +213,9 @@ class Window:
 
     # Provides the proceed button going to the download screen
     def to_choose_res(self):
-        self.proceed_button = Button(self.master, width=10, bg="green", fg="black",
-                                     text="Proceed", font=("Arial", 10), command=self.choose_res)
+        self.proceed_button = Button(self.master, width=10, bg="#4AEE12", fg="black",
+                                     text="Proceed", font=("Arial", 10, "bold"),
+                                     command=self.choose_res)
         self.proceed_button.grid(row=4)
 
     # Goes back to the directory screen
