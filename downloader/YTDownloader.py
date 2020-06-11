@@ -9,7 +9,6 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 from pytube import YouTube
-import time
 import socket
 
 
@@ -41,7 +40,7 @@ class Window:
         self.check_button.grid(row=3, pady=10)
 
         # Displays the possible error upon checking the video
-        self.entry_error = Label(self.master, text="", fg="red", font=("Helvetica", 15))
+        self.entry_error = Label(self.master, text="", fg="#FF0000", font=("Helvetica", 15))
         self.entry_error.grid(pady=(0, 30))
 
         # Label for displaying the title of the video
@@ -52,10 +51,12 @@ class Window:
 
         # Frame for the yes and no button for confirmation of the video
         self.confirmation_frame = Frame(self.master)
+        # Frame for the restart and exit button in the last screen
+        self.iter_frame = Frame(self.master)
 
-        developer_label = Label(self.master, fg = "#158BC6", font = ("Sans Serif", 15, "italic"),
-                                text = "Developed by: SauceCute")
-        developer_label.grid(row = 7)
+        developer_label = Label(self.master, fg="#158BC6", font=("Sans Serif", 15, "italic"),
+                                text="Developed by: SauceCute")
+        developer_label.grid(row=7)
 
         # For the objects in the initial screen
         self.title = None
@@ -76,10 +77,12 @@ class Window:
         self.download_button = Button()
         self.download_label = Button()
         self.video = None
+        self.restart_button = Button()
+        self.exit_button = Button()
 
     # Controls the checking of the provided link for the video
     # Some errors not yet shown to the user:
-        # 1. Empty or no link provided
+    # 1. Empty or no link provided
     def check_link(self):
         # Make sure that the objects for confirming the video is not yet shown in the screen
         self.title_label.grid_forget()
@@ -94,7 +97,6 @@ class Window:
             else:
                 title = pytube.YouTube(self.link).title
                 if title == "YouTube":
-                    print(title)
                     self.entry_error['text'] = "An error occurred. Please try again."
                 else:
                     self.show_title(title)
@@ -157,7 +159,7 @@ class Window:
         self.check_button.grid_forget()
 
         # Button for choosing the directory
-        self.choosing_dir_button = Button(self.master, width=20, bg="#4AEE12", fg="black",
+        self.choosing_dir_button = Button(self.master, width=20, bg="#2BAE66", fg="#FCF6F5",
                                           text="Choose Directory", font=("Arial", 20),
                                           command=self.choose_directory)
         self.choosing_dir_button.grid(row=2)
@@ -209,7 +211,7 @@ class Window:
             self.proceed_button.grid_forget()
             self.to_choose_res()
         else:
-            self.directory_label.config(text="Please choose a folder!", fg="red")
+            self.directory_label.config(text="Please choose a folder!", fg="#FF0000")
 
     # Provides the proceed button going to the download screen
     def to_choose_res(self):
@@ -227,8 +229,10 @@ class Window:
         self.to_dir_screen_button.grid_forget()
         self.download_label.grid_forget()
 
-        self.choosing_dir_button.grid(row=2)
-        self.to_init_screen_button.grid(row=5)
+        self.directory_label['text'] = ""
+        self.choosing_dir_button.grid(row = 2)
+        self.directory_label.grid(row = 3)
+        self.to_init_screen_button.grid(row = 5)
 
     # Displays the objects on the download screen
     def choose_res(self):
@@ -248,11 +252,11 @@ class Window:
         self.res_label = Label(self.master, fg="green", text="Please choose a resolution",
                                font=("Sans Serif", 20))
         self.res_label.grid(row=2)
-        self.res_choices = ttk.Combobox(self.master, values=res_values_list)
+        self.res_choices = ttk.Combobox(self.master, values=res_values_list, state="readonly")
         self.res_choices.grid(row=3)
 
-        self.download_button = Button(self.master, width=10, bg="green", fg="black",
-                                      text="Download", font=("Arial", 10),
+        self.download_button = Button(self.master, width=10, bg="#4AEE12", fg="black",
+                                      text="Download", font=("Arial", 10, "bold"),
                                       command=self.download)
         self.download_button.grid(row=4)
 
@@ -260,7 +264,7 @@ class Window:
         self.download_label.grid(row=5)
 
         self.to_dir_screen_button = Button(self.master, width=10, bg="yellow", fg="black",
-                                           text="Go Back", font=("Arial", 10),
+                                           text="Go Back", font=("Arial", 10, "bold"),
                                            command=self.restart_dir_screen)
         self.to_dir_screen_button.grid(row=6, pady=15)
 
@@ -272,11 +276,25 @@ class Window:
         else:
             chosen_res = self.video.streams.get_by_resolution(choice)
             chosen_res.download(self.directory_label['text'])
-            self.download_label['text'] = "Finished download"
+            self.download_label['text'] = "Finished download. Download another video?"
 
-            time.sleep(10)
-            self.master.destroy()
-            start()
+            self.to_dir_screen_button.grid_forget()
+            self.restart_button = Button(self.iter_frame, width=5, bg="green", fg="white",
+                                         text="Yes", font=("Arial", 10, "bold"),
+                                         command=self.restart)
+            self.restart_button.pack(side=LEFT, padx=10)
+
+            self.exit_button = Button(self.iter_frame, width=5, bg="red", fg="white",
+                                      text="No", font=("Arial", 10, "bold"),
+                                      command=self.master.destroy)
+            self.exit_button.pack(side=RIGHT)
+
+            self.iter_frame.grid(row=6)
+
+    # Another run of the program
+    def restart(self):
+        self.master.destroy()
+        start()
 
 def start():
     root = Tk()
